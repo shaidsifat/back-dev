@@ -29,8 +29,8 @@ SECRET_KEY = '0)b$4kww5-5vn$l#cyl6%)qfn3x_v#&gkd*pf%r^7edc+5mprb'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['127.0.0.1','careboxbackend.herokuapp.com']
-
+#ALLOWED_HOSTS = ['127.0.0.1','careboxbackend.herokuapp.com']
+ALLOWED_HOSTS = ["*"]
 
 # Application definition
 
