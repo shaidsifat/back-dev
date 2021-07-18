@@ -12,6 +12,10 @@ urlpatterns = [
     path('uploadlist/<int:pk>/', views.ProductUploadDetail.as_view()),
     path('users/', views.UserList.as_view()),
     path('users/<int:pk>/', views.UserDetail.as_view()),
+    path('fileup/', views.model_form_upload , name='fileup'),
+    path('membershiplist/', views.MembershipList.as_view()),
+    path('membershiplist/<int:pk>/', views.MembershipDetail.as_view()),
+
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) 
 

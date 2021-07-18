@@ -8,24 +8,24 @@ from rest_framework.views import APIView
 from rest_framework.response import Response 
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
-from .serializers import ProductInfoSerializer, UploadprescriptionSerializer, UserSerializer 
+from .serializers import ProductInfoSerializer, UploadprescriptionSerializer, UserSerializer, UploadSerializer, MembershipSerializer 
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser, FileUploadParser
 from rest_framework.views import APIView 
 from rest_framework.reverse import reverse
 from . import views 
 from rest_framework.decorators import api_view 
 from rest_framework import status, generics 
-from django.contrib.auth.models import User 
-from django.shortcuts import render 
+#from django.contrib.auth.models import User 
+from django.shortcuts import render, redirect 
 from django.views.generic import TemplateView
 from django.views.generic.edit import CreateView
 from django.urls import reverse_lazy
-from .models import Product_Info, Upload_Prescription 
+from .models import Product_Info, Upload_Prescription, Document, User_info, Membership 
 from rest_framework import permissions
 from .permissions import IsOwnerOrReadOnly
 from django.contrib.auth.decorators import login_required
 #from .forms import UploadForm
-from .forms import UploadForm 
+from .forms import UploadForm, DocumentForm 
 from .functions import handle_uploaded_file
 
 def home1(request):
@@ -116,6 +116,7 @@ class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]
 
 
+
 @api_view(['GET'])
 def api_root(request, format=None):
     return Response({
@@ -147,14 +148,89 @@ def post_data(request):
 
 
 
-class UserList(generics.ListAPIView):
-    queryset = User.objects.all()
+class UserList(generics.ListCreateAPIView):
+    queryset = User_info.objects.all()
     serializer_class = UserSerializer
+    def perform_create(self, serializer):
+       serializer.save(owner=self.request.user)
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly] 
+    
+class UserDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = User_info.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly] 
 
 
-class UserDetail(generics.RetrieveAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
+class MembershipList(generics.ListCreateAPIView):
+    queryset = Membership.objects.all()
+    serializer_class = MembershipSerializer
+    def perform_create(self, serializer):
+       serializer.save(owner=self.request.user)
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly] 
+    
+class MembershipDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Membership.objects.all()
+    serializer_class = MembershipSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]     
+
+@api_view(['GET'])
+def api_root(request, format=None):
+    return Response({
+        'users': reverse('user-list', request=request, format=format),
+        'user': reverse('user-list', request=request, format=format)
+    })
+
+@api_view(['POST'])
+def post_data(request):
+    serializer = UserSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def api_root(request, format=None):
+    return Response({
+        'users': reverse('user-list', request=request, format=format),
+        'membership': reverse('membership-list', request=request, format=format)
+    })
+
+@api_view(['POST'])
+def post_data(request):
+    serializer = MembershipSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(serializer.data)
+
+
+'''
+
+class MembershipList(generics.ListAPIView):
+    queryset = Membership.objects.all()
+    serializer_class = MembershipSerializer
+    def perform_create(self, serializer):
+       serializer.save(owner=self.request.user)
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly] 
+    
+class MembershipDetail(generics.RetrieveAPIView):
+    queryset = Membership.objects.all()
+    serializer_class = MembershipSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly] 
+
+@api_view(['GET'])
+def api_root(request, format=None):
+    return Response({
+        'users': reverse('user-list', request=request, format=format),
+        'membership': reverse('membership-list', request=request, format=format)
+    })
+
+@api_view(['POST'])
+def post_data(request):
+    serializer = MembershipSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(serializer.data)
+
+'''
 
 def index(request):  
     if request.method == 'POST':  
@@ -166,4 +242,14 @@ def index(request):
         uform = UploadForm()  
         return render(request,"index.html",{'form':uform})     
 
-
+def model_form_upload(request):
+    if request.method == 'POST':
+        form = DocumentForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return redirect('home')
+    else:
+        form = DocumentForm()
+    return render(request, 'model_form_upload.html', {
+        'form': form
+    })
